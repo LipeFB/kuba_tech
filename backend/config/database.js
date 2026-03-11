@@ -1,18 +1,13 @@
 const mysql = require('mysql2');
 
-const connection = mysql.createConnection({
+const pool = mysql.createPool({
     host: 'localhost',
-    user: 'root',
-    password: '12092204070806072023',
-    database: 'technical_assistance'
+    user: 'root', // Altere para seu usuário
+    password: '12092204070806072023', // Altere para sua senha
+    database: 'kuba_tech',
+    waitForConnections: true,
+    connectionLimit: 10,
+    queueLimit: 0
 });
 
-connection.connect((error) => {
-    if (error) {
-        console.error('Database connection failed:', error);
-        return;
-    }
-    console.log('Connected to MySQL database.');
-});
-
-module.exports = connection;
+module.exports = pool.promise();
