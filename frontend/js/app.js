@@ -29,6 +29,23 @@ navItems.forEach(item => {
         document.getElementById(target).classList.add('active');
         
         loadData(target); // Carrega os dados da aba
+
+        sidebar.classList.remove('active');
+        mainContent.classList.remove('shifted');
+
+        document.addEventListener('click', (event) => {
+        const isMenuOpen = sidebar.classList.contains('active');
+    
+        // Verifica se o clique ocorreu FORA do menu (sidebar) e FORA do botão (menuBtn)
+        const isClickOutside = !sidebar.contains(event.target) && !menuBtn.contains(event.target);
+
+        // Se o menu estiver aberto e o clique foi de fora, fecha o menu
+        if (isMenuOpen && isClickOutside) {
+        sidebar.classList.remove('active');
+        mainContent.classList.remove('shifted');
+    }
+});
+
     });
 });
 
