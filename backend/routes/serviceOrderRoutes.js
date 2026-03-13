@@ -3,10 +3,11 @@ const router = express.Router();
 const db = require('../config/database');
 
 router.post('/', async (req, res) => {
-    const { customer_cpf, device_serial, technician, opening_date } = req.body;
+    const { customer_cpf, device_serial, technician, opening_date, problem_description, status } = req.body;
     try {
-        await db.query('INSERT INTO service_orders (customer_cpf, device_serial, technician, opening_date) VALUES (?, ?, ?, ?)', 
-        [customer_cpf, device_serial, technician, opening_date]);
+        // AQUI ESTÁ O SEGREDO: Os nomes entre parênteses devem ser idênticos aos do MySQL
+        await db.query('INSERT INTO service_orders (customer_cpf, device_serial, technician, opening_date, problem_description, status) VALUES (?, ?, ?, ?, ?, ?)', 
+        [customer_cpf, device_serial, technician, opening_date, problem_description, status]);
         res.status(201).json({ message: 'O.S. criada!' });
     } catch (error) {
         res.status(500).json({ error: error.message });

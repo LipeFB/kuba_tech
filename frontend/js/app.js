@@ -94,7 +94,7 @@ function loadData(page) {
 
 // --- CLIENTES ---
 async function fetchClientes() {
-    const res = await fetch($`{API_URL}`/customers);
+    const res = await fetch(`${API_URL}/customers`);
     const data = await res.json();
     const tbody = document.querySelector('#table-clientes tbody');
     tbody.innerHTML = '';
@@ -111,7 +111,7 @@ async function fetchClientes() {
 }
 
 async function editCustomer(cpf) {
-    const res = await fetch($`{API_URL}`/customers);
+    const res = await fetch(`${API_URL}/customers`);
     const data = await res.json();
     const cliente = data.find(c => c.cpf === cpf);
 
@@ -122,11 +122,11 @@ async function editCustomer(cpf) {
         document.getElementById('cli-email').value = cliente.email;
 
         document.getElementById('cli-cpf').disabled = true;
-        editingCustomerCpf = cpf; 
+        editingCustomerCpf = cpf;
         
         const form = document.getElementById('form-cliente');
         if (!form.classList.contains('active')) form.classList.add('active');
-        window.scrollTo(0, 0); 
+        window.scrollTo(0, 0);
     }
 }
 
@@ -153,7 +153,7 @@ async function saveCustomer(e) {
             alert(editingCustomerCpf ? 'Cliente atualizado!' : 'Cliente salvo!');
             document.getElementById('form-cliente').reset();
             document.getElementById('cli-cpf').disabled = false;
-            editingCustomerCpf = null; 
+            editingCustomerCpf = null;
             document.getElementById('form-cliente').classList.remove('active');
             fetchClientes();
         } else {
@@ -166,14 +166,14 @@ async function saveCustomer(e) {
 
 async function deleteCustomer(cpf) {
     if(confirm('Tem certeza? Isso apagará os dispositivos e OS vinculadas!')) {
-        await fetch(`${API_URL}`/customers/`${cpf}`, { method: 'DELETE' });
+        await fetch(`${API_URL}/customers/${cpf}`, { method: 'DELETE' });
         fetchClientes();
     }
 }
 
 // --- DISPOSITIVOS ---
 async function fetchDispositivos() {
-    const res = await fetch(`${API_URL}`/devices);
+    const res = await fetch(`${API_URL}/devices`);
     const data = await res.json();
     const tbody = document.querySelector('#table-dispositivos tbody');
     tbody.innerHTML = '';
@@ -199,7 +199,7 @@ async function editDevice(serial) {
         document.getElementById('dev-cpf').value = device.customer_cpf;
         document.getElementById('dev-tipo').value = device.type;
 
-        document.getElementById('dev-serial').disabled = true; 
+        document.getElementById('dev-serial').disabled = true;
         editingDeviceSerial = serial;
         
         const form = document.getElementById('form-dispositivo');
@@ -209,7 +209,7 @@ async function editDevice(serial) {
 }
 
 async function saveDevice(e) {
-    e.preventDefault(); 
+    e.preventDefault();
     const customer_cpf = document.getElementById('dev-cpf').value;
     const type = document.getElementById('dev-tipo').value;
     const serial_number = document.getElementById('dev-serial').value;
@@ -229,9 +229,9 @@ async function saveDevice(e) {
         if (response.ok) {
             alert(editingDeviceSerial ? 'Dispositivo atualizado!' : 'Dispositivo salvo!');
             document.getElementById('form-dispositivo').reset();
-            document.getElementById('dev-serial').disabled = false; 
-            editingDeviceSerial = null; 
-            document.getElementById('form-dispositivo').classList.remove('active'); 
+            document.getElementById('dev-serial').disabled = false;
+            editingDeviceSerial = null;
+            document.getElementById('form-dispositivo').classList.remove('active');
             fetchDispositivos();
         } else {
             alert('Erro ao salvar o dispositivo. Verifique os dados.');
@@ -271,7 +271,7 @@ async function editOS(id) {
         document.getElementById('os-cpf').value = os.customer_cpf;
         document.getElementById('os-serial').value = os.device_serial;
         document.getElementById('os-tecnico').value = os.technician;
-        document.getElementById('os-status').value = os.status; 
+        document.getElementById('os-status').value = os.status;
 
         const dataObj = new Date(os.opening_date);
         const dataFormatada = dataObj.toISOString().split('T')[0];
@@ -290,14 +290,15 @@ async function editOS(id) {
 }
 
 async function saveOS(e) {
-    e.preventDefault(); 
+    e.preventDefault();
     const customer_cpf = document.getElementById('os-cpf').value;
     const device_serial = document.getElementById('os-serial').value;
     const technician = document.getElementById('os-tecnico').value;
     const opening_date = document.getElementById('os-data').value;
-    const status = document.getElementById('os-status').value; 
+    const problem_description = document.getElementById('os-problema').value;
+    const status = document.getElementById('os-status').value;
 
-    if(!validateData({customer_cpf, device_serial, technician, opening_date})) return;
+    if(!validateData({customer_cpf, device_serial, technician, opening_date, problem_description, status})) return;
 
     const method = editingOSId ? 'PUT' : 'POST';
     const url = editingOSId ? `${API_URL}/service-orders/${editingOSId}` : `${API_URL}/service-orders`;
@@ -306,23 +307,31 @@ async function saveOS(e) {
         const response = await fetch(url, {
             method: method,
             headers: { 'Content-Type': 'application/json' },
-            body: JSON.stringify({ customer_cpf, device_serial, technician, opening_date, status })
+            body: JSON.stringify({ customer_cpf, device_serial, technician, opening_date, problem_description, status })
         });
+        console.log('passou ok');
 
         if (response.ok) {
             alert(editingOSId ? 'Ordem de Serviço atualizada!' : 'Ordem de Serviço salva!');
             document.getElementById('form-os').reset();
+        console.log('passou aqui');
             
             document.getElementById('os-cpf').disabled = false;
             document.getElementById('os-serial').disabled = false;
             document.getElementById('os-data').disabled = false;
+            document.getElementById('os-problema').disabled = false;
+            document.getElementById('os-status').disabled = false;
+        console.log('passou aqui');
             
             editingOSId = null;
-            document.getElementById('form-os').classList.remove('active'); 
+            document.getElementById('form-os').classList.remove('active');
             fetchOS();
-            loadDashboard(); 
+            loadDashboard();
         } else {
-            alert('Erro ao salvar a O.S. Verifique os dados.');
+            // CAPTURA A MENSAGEM DE ERRO DO BACKEND E EXIBE
+            const errorData = await response.json();
+            alert(`Erro do Servidor: ${errorData.error}`);
+            console.error("Detalhes do erro:", errorData);
         }
     } catch (error) {
         console.error(error);
@@ -354,3 +363,4 @@ async function loadDashboard() {
 
 // Inicia na Home
 loadDashboard();
+
