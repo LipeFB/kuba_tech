@@ -1,42 +1,37 @@
+-- Criação do banco de dados
+CREATE DATABASE IF NOT EXISTS kuba_tech;
+USE kuba_tech;
 
-CREATE DATABASE technical_assistance;
-USE technical_assistance;
-
--- CLIENTES
+-- Tabela de Clientes
 CREATE TABLE customers (
-    id INT AUTO_INCREMENT PRIMARY KEY,
+    cpf VARCHAR(14) PRIMARY KEY,
     name VARCHAR(100) NOT NULL,
-    phone VARCHAR(20),
-    email VARCHAR(100),
-    created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
+    phone VARCHAR(15) NOT NULL,
+    email VARCHAR(100) NOT NULL
 );
 
--- DISPOSITIVOS
+-- Tabela de Dispositivos
 CREATE TABLE devices (
-    id INT AUTO_INCREMENT PRIMARY KEY,
-    customer_id INT NOT NULL,
-    type VARCHAR(50),
-    brand VARCHAR(50),
-    model VARCHAR(50),
-    serial_number VARCHAR(100),
-    created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
-
-    FOREIGN KEY (customer_id) REFERENCES customers(id)
-    ON DELETE CASCADE
+    serial_number VARCHAR(100) PRIMARY KEY,
+    customer_cpf VARCHAR(14) NOT NULL,
+    type VARCHAR(50) NOT NULL,
+    FOREIGN KEY (customer_cpf) REFERENCES customers(cpf) ON DELETE CASCADE ON UPDATE CASCADE
 );
 
--- ORDENS DE SERVIÇO
+-- Tabela de Ordens de Serviço
 CREATE TABLE service_orders (
     id INT AUTO_INCREMENT PRIMARY KEY,
-    device_id INT NOT NULL,
-    problem_description TEXT,
-    status VARCHAR(50) DEFAULT 'Recebido',
-    technician VARCHAR(100),
-    price DECIMAL(10,2),
-    created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
-
-    FOREIGN KEY (device_id) REFERENCES devices(id)
-    ON DELETE CASCADE
+    customer_cpf VARCHAR(14) NOT NULL,
+    device_serial VARCHAR(100) NOT NULL,
+    technician VARCHAR(100) NOT NULL,
+    opening_date DATE NOT NULL,
+    status ENUM('A Realizar', 'Em Andamento', 'Finalizada') DEFAULT 'A Realizar',
+    FOREIGN KEY (customer_cpf) REFERENCES customers(cpf) ON DELETE CASCADE ON UPDATE CASCADE,
+    FOREIGN KEY (device_serial) REFERENCES devices(serial_number) ON DELETE CASCADE ON UPDATE CASCADE
 );
 
+ALTER TABLE service_orders ADD COLUMN problem_description TEXT NOT NULL AFTER service_ordersservice_orderstechnician;
+
 SELECT * FROM customers;
+SELECT * FROM devices;
+SELECT * FROM service_orders;
