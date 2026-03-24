@@ -19,57 +19,46 @@ menuBtn.addEventListener('click', () => {
 
 navItems.forEach(item => {
     item.addEventListener('click', () => {
-        // Remove active de todos
         navItems.forEach(nav => nav.classList.remove('active'));
         pages.forEach(page => page.classList.remove('active'));
         
-        // Adiciona active no clicado
         item.classList.add('active');
         const target = item.getAttribute('data-target');
         document.getElementById(target).classList.add('active');
         
-        loadData(target); // Carrega os dados da aba
+        loadData(target);
 
         sidebar.classList.remove('active');
         mainContent.classList.remove('shifted');
+    });
+});
 
-        document.addEventListener('click', (event) => {
-        const isMenuOpen = sidebar.classList.contains('active');
-    
-        // Verifica se o clique ocorreu FORA do menu (sidebar) e FORA do botão (menuBtn)
-        const isClickOutside = !sidebar.contains(event.target) && !menuBtn.contains(event.target);
-
-        // Se o menu estiver aberto e o clique foi de fora, fecha o menu
-        if (isMenuOpen && isClickOutside) {
+// Fecha menu ao clicar fora (Melhorado)
+document.addEventListener('click', (event) => {
+    if (sidebar.classList.contains('active') && !sidebar.contains(event.target) && !menuBtn.contains(event.target)) {
         sidebar.classList.remove('active');
         mainContent.classList.remove('shifted');
     }
 });
 
-    });
-});
-
-// Exibir/Ocultar Formulários e resetar modo de edição
+// Exibir/Ocultar Formulários
 function toggleForm(formId) {
     const form = document.getElementById(formId);
     form.classList.toggle('active');
     
-    // Se estiver abrindo o formulário pelo botão "Novo", limpa o form e destrava os campos
     if (form.classList.contains('active')) {
         form.reset();
         
-        if (formId === 'form-cliente') {
-            editingCustomerCpf = null;
-            document.getElementById('cli-cpf').disabled = false;
-        } else if (formId === 'form-dispositivo') {
-            editingDeviceSerial = null;
-            document.getElementById('dev-serial').disabled = false;
-        } else if (formId === 'form-os') {
+        // Esconde o histórico caso esteja abrindo uma nova OS
+        if (formId === 'form-os') {
             editingOSId = null;
+            document.getElementById('os-historico-problema').style.display = 'none';
+            document.getElementById('label-historico').style.display = 'none';
             document.getElementById('os-cpf').disabled = false;
             document.getElementById('os-serial').disabled = false;
-            document.getElementById('os-data').disabled = false;
         }
+        if (formId === 'form-cliente') { editingCustomerCpf = null; document.getElementById('cli-cpf').disabled = false; }
+        if (formId === 'form-dispositivo') { editingDeviceSerial = null; document.getElementById('dev-serial').disabled = false; }
     }
 }
 
@@ -77,23 +66,19 @@ function toggleForm(formId) {
 document.addEventListener('input', (e) => {
     if (e.target.id.includes('cpf')) {
         let v = e.target.value.replace(/\D/g, "");
-        v = v.replace(/(\d{3})(\d)/, "$1.$2");
-        v = v.replace(/(\d{3})(\d)/, "$1.$2");
-        v = v.replace(/(\d{3})(\d{1,2})$/, "$1-$2");
+        v = v.replace(/(\d{3})(\d)/, "$1.$2").replace(/(\d{3})(\d)/, "$1.$2").replace(/(\d{3})(\d{1,2})$/, "$1-$2");
         e.target.value = v;
     }
     if (e.target.id.includes('tel')) {
         let v = e.target.value.replace(/\D/g, "");
-        v = v.replace(/^(\d{2})(\d)/g, "($1) $2");
-        v = v.replace(/(\d)(\d{4})$/, "$1-$2");
+        v = v.replace(/^(\d{2})(\d)/g, "($1) $2").replace(/(\d)(\d{4})$/, "$1-$2");
         e.target.value = v;
     }
 });
 
-// --- VALIDAÇÃO ---
 function validateData(data) {
     for (let key in data) {
-        if (!data[key] || data[key].trim() === '') {
+        if (!data[key] || (typeof data[key] === 'string' && data[key].trim() === '')) {
             alert('Por favor, preencha todos os campos corretamente.');
             return false;
         }
@@ -101,7 +86,6 @@ function validateData(data) {
     return true;
 }
 
-// --- CARREGAR DADOS DAS ABAS ---
 function loadData(page) {
     if (page === 'clientes') fetchClientes();
     if (page === 'dispositivos') fetchDispositivos();
@@ -111,19 +95,12 @@ function loadData(page) {
 
 // --- CLIENTES ---
 async function fetchClientes() {
-    const res = await fetch(`${API_URL}/customers`);
+    const res = await fetch(`${API_URL}/customers?t=${new Date().getTime()}`);
     const data = await res.json();
     const tbody = document.querySelector('#table-clientes tbody');
     tbody.innerHTML = '';
     data.forEach(cli => {
-        tbody.innerHTML += `
-            <tr>
-                <td>${cli.cpf}</td><td>${cli.name}</td><td>${cli.phone}</td><td>${cli.email}</td>
-                <td>
-                    <button class="btn-edit" onclick="editCustomer('${cli.cpf}')"><i class="fas fa-edit"></i></button>
-                    <button class="btn-danger" onclick="deleteCustomer('${cli.cpf}')"><i class="fas fa-trash"></i></button>
-                </td>
-            </tr>`;
+        tbody.innerHTML += `<tr><td>${cli.cpf}</td><td>${cli.name}</td><td>${cli.phone}</td><td>${cli.email}</td><td><button class="btn-edit" onclick="editCustomer('${cli.cpf}')"><i class="fas fa-edit"></i></button><button class="btn-danger" onclick="deleteCustomer('${cli.cpf}')"><i class="fas fa-trash"></i></button></td></tr>`;
     });
 }
 
@@ -131,18 +108,14 @@ async function editCustomer(cpf) {
     const res = await fetch(`${API_URL}/customers`);
     const data = await res.json();
     const cliente = data.find(c => c.cpf === cpf);
-
     if (cliente) {
         document.getElementById('cli-cpf').value = cliente.cpf;
         document.getElementById('cli-nome').value = cliente.name;
         document.getElementById('cli-tel').value = cliente.phone;
         document.getElementById('cli-email').value = cliente.email;
-
         document.getElementById('cli-cpf').disabled = true;
         editingCustomerCpf = cpf;
-        
-        const form = document.getElementById('form-cliente');
-        if (!form.classList.contains('active')) form.classList.add('active');
+        document.getElementById('form-cliente').classList.add('active');
         window.scrollTo(0, 0);
     }
 }
@@ -159,30 +132,21 @@ async function saveCustomer(e) {
     const method = editingCustomerCpf ? 'PUT' : 'POST';
     const url = editingCustomerCpf ? `${API_URL}/customers/${editingCustomerCpf}` : `${API_URL}/customers`;
 
-    try {
-        const response = await fetch(url, {
-            method: method,
-            headers: { 'Content-Type': 'application/json' },
-            body: JSON.stringify({ cpf, name, phone, email })
-        });
+    const response = await fetch(url, {
+        method: method,
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ cpf, name, phone, email })
+    });
 
-        if(response.ok) {
-            alert(editingCustomerCpf ? 'Cliente atualizado!' : 'Cliente salvo!');
-            document.getElementById('form-cliente').reset();
-            document.getElementById('cli-cpf').disabled = false;
-            editingCustomerCpf = null;
-            document.getElementById('form-cliente').classList.remove('active');
-            fetchClientes();
-        } else {
-            alert('Erro ao salvar os dados do cliente.');
-        }
-    } catch (error) {
-        alert('Erro de conexão com o servidor.');
+    if(response.ok) {
+        alert('Cliente salvo!');
+        toggleForm('form-cliente');
+        fetchClientes();
     }
 }
 
 async function deleteCustomer(cpf) {
-    if(confirm('Tem certeza? Isso apagará os dispositivos e OS vinculadas!')) {
+    if(confirm('Tem certeza? Isso apagará dispositivos e OS vinculadas!')) {
         await fetch(`${API_URL}/customers/${cpf}`, { method: 'DELETE' });
         fetchClientes();
     }
@@ -190,19 +154,12 @@ async function deleteCustomer(cpf) {
 
 // --- DISPOSITIVOS ---
 async function fetchDispositivos() {
-    const res = await fetch(`${API_URL}/devices`);
+    const res = await fetch(`${API_URL}/devices?t=${new Date().getTime()}`);
     const data = await res.json();
     const tbody = document.querySelector('#table-dispositivos tbody');
     tbody.innerHTML = '';
     data.forEach(dev => {
-        tbody.innerHTML += `
-            <tr>
-                <td>${dev.serial_number}</td><td>${dev.customer_cpf}</td><td>${dev.type}</td>
-                <td>
-                    <button class="btn-edit" onclick="editDevice('${dev.serial_number}')"><i class="fas fa-edit"></i></button>
-                    <button class="btn-danger" onclick="deleteEntity('devices', '${dev.serial_number}')"><i class="fas fa-trash"></i></button>
-                </td>
-            </tr>`;
+        tbody.innerHTML += `<tr><td>${dev.serial_number}</td><td>${dev.customer_cpf}</td><td>${dev.type}</td><td><button class="btn-edit" onclick="editDevice('${dev.serial_number}')"><i class="fas fa-edit"></i></button><button class="btn-danger" onclick="deleteEntity('devices', '${dev.serial_number}')"><i class="fas fa-trash"></i></button></td></tr>`;
     });
 }
 
@@ -210,17 +167,13 @@ async function editDevice(serial) {
     const res = await fetch(`${API_URL}/devices`);
     const data = await res.json();
     const device = data.find(d => d.serial_number === serial);
-
     if (device) {
         document.getElementById('dev-serial').value = device.serial_number;
         document.getElementById('dev-cpf').value = device.customer_cpf;
         document.getElementById('dev-tipo').value = device.type;
-
         document.getElementById('dev-serial').disabled = true;
         editingDeviceSerial = serial;
-        
-        const form = document.getElementById('form-dispositivo');
-        if (!form.classList.contains('active')) form.classList.add('active');
+        document.getElementById('form-dispositivo').classList.add('active');
         window.scrollTo(0, 0);
     }
 }
@@ -231,50 +184,49 @@ async function saveDevice(e) {
     const type = document.getElementById('dev-tipo').value;
     const serial_number = document.getElementById('dev-serial').value;
 
-    if(!validateData({customer_cpf, type, serial_number})) return;
-
     const method = editingDeviceSerial ? 'PUT' : 'POST';
     const url = editingDeviceSerial ? `${API_URL}/devices/${editingDeviceSerial}` : `${API_URL}/devices`;
 
-    try {
-        const response = await fetch(url, {
-            method: method,
-            headers: { 'Content-Type': 'application/json' },
-            body: JSON.stringify({ serial_number, customer_cpf, type })
-        });
+    const response = await fetch(url, {
+        method: method,
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ serial_number, customer_cpf, type })
+    });
 
-        if (response.ok) {
-            alert(editingDeviceSerial ? 'Dispositivo atualizado!' : 'Dispositivo salvo!');
-            document.getElementById('form-dispositivo').reset();
-            document.getElementById('dev-serial').disabled = false;
-            editingDeviceSerial = null;
-            document.getElementById('form-dispositivo').classList.remove('active');
-            fetchDispositivos();
-        } else {
-            alert('Erro ao salvar o dispositivo. Verifique os dados.');
-        }
-    } catch (error) {
-        console.error(error);
-        alert('Erro de conexão com o servidor.');
+    if (response.ok) {
+        alert('Dispositivo salvo!');
+        toggleForm('form-dispositivo');
+        fetchDispositivos();
     }
 }
 
-// --- ORDENS DE SERVIÇO ---
+// --- ORDENS DE SERVIÇO (REVISADO) ---
 async function fetchOS() {
-    const res = await fetch(`${API_URL}/service-orders`);
+    const res = await fetch(`${API_URL}/service-orders?t=${new Date().getTime()}`);
     const data = await res.json();
     const tbody = document.querySelector('#table-os tbody');
     tbody.innerHTML = '';
+
     data.forEach(os => {
         const dataAbertura = new Date(os.opening_date).toLocaleDateString('pt-BR');
+        
+        // Pega apenas o último relato para a tabela não ficar gigante
+        const partes = os.problem_description.split('---');
+        const ultimoRelato = partes[partes.length - 1].trim();
+
         tbody.innerHTML += `
             <tr>
-                <td>${os.id}</td><td>${os.customer_cpf}</td><td>${os.device_serial}</td>
-                <td>${os.technician}</td><td>${dataAbertura}</td><td>${os.status}</td>
+                <td>${os.id}</td>
+                <td>${os.customer_cpf}</td>
+                <td>${os.device_serial}</td>
+                <td>${os.technician}</td>
+                <td>${dataAbertura}</td>
+                <td><span class="badge ${os.status === 'Finalizada' ? 'bg-success' : 'bg-warning text-dark'}">${os.status}</span></td>
                 <td>
                     <button class="btn-edit" onclick="editOS(${os.id})"><i class="fas fa-edit"></i></button>
                     <button class="btn-danger" onclick="deleteEntity('service-orders', ${os.id})"><i class="fas fa-trash"></i></button>
                 </td>
+                <td class="texto-truncado" title="${os.problem_description}">${ultimoRelato}</td>
             </tr>`;
     });
 }
@@ -285,37 +237,49 @@ async function editOS(id) {
     const os = data.find(o => o.id === id);
 
     if (os) {
+        editingOSId = id;
         document.getElementById('os-cpf').value = os.customer_cpf;
         document.getElementById('os-serial').value = os.device_serial;
         document.getElementById('os-tecnico').value = os.technician;
         document.getElementById('os-status').value = os.status;
+        document.getElementById('os-data').value = os.opening_date.split('T')[0];
 
-        const dataObj = new Date(os.opening_date);
-        const dataFormatada = dataObj.toISOString().split('T')[0];
-        document.getElementById('os-data').value = dataFormatada;
-
+        // Bloqueia campos que não devem mudar na edição
         document.getElementById('os-cpf').disabled = true;
         document.getElementById('os-serial').disabled = true;
-        document.getElementById('os-data').disabled = true;
+
+        // Histórico
+        const histDiv = document.getElementById('os-historico-problema');
+        histDiv.innerText = os.problem_description;
+        histDiv.style.display = 'block';
+        document.getElementById('label-historico').style.display = 'block';
+
+        // Limpa campo de novo problema
+        document.getElementById('os-problema').value = '';
         
-        editingOSId = id;
-        
-        const form = document.getElementById('form-os');
-        if (!form.classList.contains('active')) form.classList.add('active');
+        document.getElementById('form-os').classList.add('active');
         window.scrollTo(0, 0);
     }
 }
 
 async function saveOS(e) {
     e.preventDefault();
-    const customer_cpf = document.getElementById('os-cpf').value;
-    const device_serial = document.getElementById('os-serial').value;
-    const technician = document.getElementById('os-tecnico').value;
-    const opening_date = document.getElementById('os-data').value;
-    const problem_description = document.getElementById('os-problema').value;
-    const status = document.getElementById('os-status').value;
+    const novoRelato = document.getElementById('os-problema').value;
+    const historicoVelho = document.getElementById('os-historico-problema').innerText;
 
-    if(!validateData({customer_cpf, device_serial, technician, opening_date, problem_description, status})) return;
+    // Concatena se for edição, senão usa apenas o novo
+    const descricaoFinal = editingOSId 
+        ? `${historicoVelho}\n--- Atualizado em ${new Date().toLocaleDateString('pt-BR')} ---\n${novoRelato}` 
+        : novoRelato;
+
+    const payload = {
+        customer_cpf: document.getElementById('os-cpf').value,
+        device_serial: document.getElementById('os-serial').value,
+        technician: document.getElementById('os-tecnico').value,
+        opening_date: document.getElementById('os-data').value,
+        problem_description: descricaoFinal,
+        status: document.getElementById('os-status').value
+    };
 
     const method = editingOSId ? 'PUT' : 'POST';
     const url = editingOSId ? `${API_URL}/service-orders/${editingOSId}` : `${API_URL}/service-orders`;
@@ -324,60 +288,36 @@ async function saveOS(e) {
         const response = await fetch(url, {
             method: method,
             headers: { 'Content-Type': 'application/json' },
-            body: JSON.stringify({ customer_cpf, device_serial, technician, opening_date, problem_description, status })
+            body: JSON.stringify(payload)
         });
-        console.log('passou ok');
 
         if (response.ok) {
-            alert(editingOSId ? 'Ordem de Serviço atualizada!' : 'Ordem de Serviço salva!');
-            document.getElementById('form-os').reset();
-        console.log('passou aqui');
-            
-            document.getElementById('os-cpf').disabled = false;
-            document.getElementById('os-serial').disabled = false;
-            document.getElementById('os-data').disabled = false;
-            document.getElementById('os-problema').disabled = false;
-            document.getElementById('os-status').disabled = false;
-        console.log('passou aqui');
-            
-            editingOSId = null;
-            document.getElementById('form-os').classList.remove('active');
-            fetchOS();
+            alert('Ordem de Serviço salva!');
+            toggleForm('form-os');
+            await fetchOS(); // Espera atualizar a tabela
             loadDashboard();
         } else {
-            // CAPTURA A MENSAGEM DE ERRO DO BACKEND E EXIBE
-            const errorData = await response.json();
-            alert(`Erro do Servidor: ${errorData.error}`);
-            console.error("Detalhes do erro:", errorData);
+            const err = await response.json();
+            alert("Erro: " + err.error);
         }
     } catch (error) {
-        console.error(error);
-        alert('Erro de conexão com o servidor.');
+        alert('Erro de conexão.');
     }
 }
 
-// --- FUNÇÃO GENÉRICA DE DELETE ---
 async function deleteEntity(route, id) {
-    if(confirm('Tem certeza que deseja deletar?')) {
+    if(confirm('Tem certeza?')) {
         await fetch(`${API_URL}/${route}/${id}`, { method: 'DELETE' });
-        if(route === 'devices') fetchDispositivos();
-        if(route === 'service-orders') {
-            fetchOS();
-            loadDashboard();
-        }
+        loadData(route === 'devices' ? 'dispositivos' : 'os');
     }
 }
 
-// --- DASHBOARD (HOME) ---
 async function loadDashboard() {
-    const res = await fetch(`${API_URL}/service-orders`);
+    const res = await fetch(`${API_URL}/service-orders?t=${new Date().getTime()}`);
     const data = await res.json();
-    
     document.getElementById('count-todo').innerText = data.filter(os => os.status === 'A Realizar').length;
     document.getElementById('count-progress').innerText = data.filter(os => os.status === 'Em Andamento').length;
     document.getElementById('count-done').innerText = data.filter(os => os.status === 'Finalizada').length;
 }
 
-// Inicia na Home
 loadDashboard();
-

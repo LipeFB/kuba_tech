@@ -161,3 +161,24 @@ th { background-color: var(--black); color: var(--white); }
 .to-do { background-color: var(--dark-gray); }
 .in-progress { background-color: var(--blue); }
 .done { background-color: var(--purple); }
+
+.texto-truncado {
+    max-width: 300px; /* Você pode aumentar ou diminuir esse limite */
+    white-space: nowrap; /* Impede que o texto quebre para a linha de baixo */
+    overflow: hidden; /* Esconde o que passar do limite */
+    text-overflow: ellipsis; /* Adiciona os "..." no final */
+}
+
+#os-historico-problema {
+            background-color: #f8f9fa;
+            border-left: 4px solid #0d6efd;
+            padding: 15px;
+            margin-bottom: 15px;
+            max-height: 200px;
+            overflow-y: auto;
+            font-size: 0.9rem;
+            color: #444;
+        }
+        
+        .hidden-form { display: none; }
+        .hidden-form.active { display: block; }
