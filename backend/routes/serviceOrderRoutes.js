@@ -24,9 +24,9 @@ router.get('/', async (req, res) => {
 });
 
 router.put('/:id', async (req, res) => {
-    const { technician, status } = req.body;
+    const { technician, status, problem_description } = req.body;
     try {
-        await db.query('UPDATE service_orders SET technician=?, status=? WHERE id=?', [technician, status, req.params.id]);
+        await db.query('UPDATE service_orders SET technician=?, status=?, problem_description=? WHERE id=?', [technician, status, problem_description, req.params.id]);
         res.json({ message: 'O.S. atualizada!' });
     } catch (error) {
         res.status(500).json({ error: error.message });

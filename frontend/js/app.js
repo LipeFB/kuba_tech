@@ -242,6 +242,7 @@ async function editOS(id) {
         document.getElementById('os-serial').value = os.device_serial;
         document.getElementById('os-tecnico').value = os.technician;
         document.getElementById('os-status').value = os.status;
+        document.getElementById('os-historico-problema').value = os.problem_description;
         document.getElementById('os-data').value = os.opening_date.split('T')[0];
 
         // Bloqueia campos que não devem mudar na edição
