@@ -76,6 +76,8 @@ document.addEventListener('input', (e) => {
     }
 });
 
+
+
 function validateData(data) {
     for (let key in data) {
         if (!data[key] || (typeof data[key] === 'string' && data[key].trim() === '')) {
@@ -320,5 +322,7 @@ async function loadDashboard() {
     document.getElementById('count-progress').innerText = data.filter(os => os.status === 'Em Andamento').length;
     document.getElementById('count-done').innerText = data.filter(os => os.status === 'Finalizada').length;
 }
+
+//TESTE//
 
 loadDashboard();
